@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ashtanga Yoga Guide - Premium</title>
+  
+  <!-- PWA Manifest embutido para transformar em app instalável -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkd1aWEgQXNodGFuZ2EgWW9nYSIsCiAgInNob3J0X25hbWUiOiAiQXNodGFuZ2EiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y1ZjVmNCIsCiAgInRoZW1lX2NvbG9yIjogIiMwZjc2NmUiLAogICJpY29ucyI6IFt7InNyYyI6ICJodHRwczovL3BsYWNlaG9sZC5jby8xOTJ4MTkyLzBkNzg2Ni9mZmZmZmY/dGV4dD1BWSIsInR5cGVzIjogImltYWdlL3BuZyIsInNpemVzIjogIjE5MngxOTIifV0KfQ==">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <style>
+    body {
+      background-color: #f5f5f4; 
+      color: #292524; 
+      -webkit-font-smoothing: antialiased;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-overlay { animation: overlayIn 0.2s ease-out forwards; }
+    @keyframes overlayIn {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(4px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- DICIONÁRIO DE TRADUÇÕES (I18N) COMPLETO ---
+    const translations = {
+      pt: {
+        appTitle: "Guia Ashtanga",
+        appSubtitle: "Material de Estudo Estruturado",
+        removeAdsBtn: "Remover Anúncios",
+        premiumTag: "Premium",
+        tabs: { seq: "Sequência", adapt: "Adaptações", mantras: "Mantras" },
+        badges: { inhale: "INSPIRA", exhale: "EXPIRA", transition: "TRANSIÇÃO", relax: "RELAXE" },
+        ads: { label: "Patrocinado", text: "Tapetes de Yoga com 20% de desconto na loja parceira!" },
+        modal: { 
+          title: "Desbloqueie a Experiência Premium",
+          desc: "Estude sem distrações. Remova todos os anúncios e apoie o desenvolvimento de ferramentas acessíveis para professores.",
+          price: "R$ 40,00",
+          payment: "Pagamento único. Acesso vitalício.",
+          buyBtn: "Comprar Premium Agora",
+          close: "Agora não"
+        },
+        seqDesc: "A Primeira Série (Yoga Chikitsa) segue uma lógica rígida. Abra um bloco por vez para manter a mente focada sem sobrecarga visual.",
+        blocks: {
+          suryaA: "1. Surya Namaskar A",
+          suryaB: "2. Surya Namaskar B",
+          standing: "3. Asanas Fundamentais (Em Pé)",
+          seated: "4. Asanas Sentados",
+          finishing: "5. Sequência Final"
+        },
+        suryaAData: [
+          { count: "Ekam (1)", asana: "Urdhva Hastasana", r: "inhale", desc: "Erga os braços acima da cabeça, olhe para os polegares." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Desça o tronco à frente. Adaptação: dobre levemente os joelhos." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Levante a cabeça e alongue a coluna." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Caminhe ou salte para trás, descendo na prancha baixa." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Cachorro olhando para cima. Abra o peito." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Cachorro olhando para baixo. Permaneça por 5 respirações." },
+          { count: "Sapta (7)", asana: "Uttanasana B", r: "inhale", desc: "Caminhe à frente, cabeça erguida, coluna longa." },
+          { count: "Ashtau (8)", asana: "Uttanasana A", r: "exhale", desc: "Solte a cabeça em direção aos joelhos." },
+          { count: "Nava (9)", asana: "Urdhva Hastasana", r: "inhale", desc: "Suba o tronco com as costas retas, erga os braços." },
+          { count: "Samasthiti", asana: "Retorno", r: "exhale", desc: "Expirando, retorne à postura inicial neutra." }
+        ],
+        suryaBData: [
+          { count: "Ekam (1)", asana: "Utkatasana", r: "inhale", desc: "Dobre os joelhos, eleve os braços." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Mãos no chão, estique pernas, cabeça nos joelhos." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Levante apenas a cabeça, alongue a coluna." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Salte para trás, prancha baixa." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Cachorro olhando para cima." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Cachorro olhando para baixo." },
+          { count: "Sapta (7)", asana: "Virabhadrasana A (Dir)", r: "inhale", desc: "Gire pé esquerdo. Pé direito à frente, eleve braços." },
+          { count: "Ashtau (8)", asana: "Chaturanga", r: "exhale", desc: "Mãos no chão, perna direita para trás, desça." },
+          { count: "Nava (9)", asana: "Urdhva Mukha", r: "inhale", desc: "Cachorro olhando para cima." },
+          { count: "Dasha (10)", asana: "Adho Mukha", r: "exhale", desc: "Cachorro olhando para baixo." },
+          { count: "Ekadasha (11)", asana: "Virabhadrasana A (Esq)", r: "inhale", desc: "Gire pé direito. Pé esquerdo à frente, eleve braços." },
+          { count: "Dvadasa (12)", asana: "Chaturanga", r: "exhale", desc: "Mãos no chão, perna esquerda para trás, desça." },
+          { count: "Trayodasha (13)", asana: "Urdhva Mukha", r: "inhale", desc: "Cachorro olhando para cima." },
+          { count: "Chaturdasha (14)", asana: "Adho Mukha", r: "exhale", desc: "Cachorro olhando para baixo. Permaneça 5 respirações." },
+          { count: "Panchadasha (15)", asana: "Uttanasana B", r: "inhale", desc: "Salte à frente, cabeça erguida." },
+          { count: "Shodasha (16)", asana: "Uttanasana A", r: "exhale", desc: "Cabeça em direção aos joelhos." },
+          { count: "Saptadasha (17)", asana: "Utkatasana", r: "inhale", desc: "Dobre os joelhos, eleve os braços." },
+          { count: "Samasthiti", asana: "Retorno", r: "exhale", desc: "Estique pernas, braços ao lado do corpo." }
+        ],
+        standingData: [
+          { count: "Ekam/Dve", asana: "Padangusthasana", r: "exhale", desc: "(In) Salte afastando os pés. (Ex) Segure dedões. 5 respirações." },
+          { count: "Trini/Chatvari", asana: "Padahastasana", r: "exhale", desc: "(In) Levante a cabeça. (Ex) Pise nas mãos. 5 respirações." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Suba o tronco. (Ex) Salte unindo os pés à frente." },
+          { count: "Ekam/Dve", asana: "Utthita Trikonasana", r: "exhale", desc: "(In) Salte à direita. (Ex) Desça à direita. 5 resp. (In) Suba. (Ex) Desça à esquerda. 5 resp." },
+          { count: "Trini/Chatvari", asana: "Parivrtta Trikonasana", r: "exhale", desc: "(In) Suba e gire o corpo. (Ex) Torsão à direita. 5 resp. Faça o lado esquerdo." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Suba. (Ex) Volte à frente do tapete." },
+          { count: "Ekam/Dve", asana: "Utthita Parsvakonasana", r: "exhale", desc: "Ângulo lateral estendido. Lado direito e esquerdo (5 resp. cada)." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Suba. (Ex) Volte à frente do tapete." },
+          { count: "Ekam/Dve", asana: "Prasarita Padottanasana A", r: "exhale", desc: "(In) Afaste pés. (Ex) Mãos no chão. (In) Cabeça sobe. (Ex) Desça. 5 resp." },
+          { count: "Samasthiti", asana: "Retorno após A, B, C, D", r: "transition", desc: "Após completar as variações, (In) Suba. (Ex) Volte à frente." },
+          { count: "Ekam/Dve", asana: "Parsvottanasana", r: "exhale", desc: "(In) Mãos nas costas em prece, gire. (Ex) Flexão sobre perna direita. Lados." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Suba. (Ex) Volte à frente do tapete." },
+          { count: "Ekam/Dve", asana: "Utthita Hasta Padangusthasana", r: "transition", desc: "Elevação da perna (adaptação: segure joelho). Dir/Esq." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "Desça a perna com controle." },
+          { count: "Ekam/Dve", asana: "Ardha Baddha Padmottanasana", r: "exhale", desc: "Meio lótus em pé. (In) Puxe o pé. (Ex) Flexione à frente." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "Após os dois lados, (In) Suba. (Ex) Desça a perna." },
+          { count: "Vinyasa", asana: "Utkatasana", r: "inhale", desc: "Postura da Cadeira. 5 respirações. Seguido de Vinyasa (Chaturanga, Urdhva, Adho)." },
+          { count: "Sapta (7)", asana: "Virabhadrasana A e B", r: "inhale", desc: "Guerreiros. Sem Vinyasa entre os lados ou entre A e B. Apenas transição de pés." }
+        ],
+        seatedData: [
+          { count: "Vinyasa", asana: "Dandasana", r: "exhale", desc: "Pernas esticadas, queixo no peito. 5 respirações." },
+          { count: "Vinyasa", asana: "Paschimottanasana A/B/C", r: "exhale", desc: "Flexão à frente sentado. 5 respirações cada. Vinyasa opcional entre A, B e C." },
+          { count: "Vinyasa", asana: "Purvottanasana", r: "inhale", desc: "Prancha para cima, elevando quadril." },
+          { count: "Vinyasa", asana: "Marichyasana A/B/C/D", r: "exhale", desc: "Torções e flexões. Lado direito e esquerdo." },
+          { count: "Vinyasa", asana: "Navasana", r: "inhale", desc: "Barco. Repita 5 vezes (5 respirações cada). Cruza pernas entre elas." },
+          { count: "Vinyasa", asana: "Baddha Konasana", r: "exhale", desc: "Sola com sola. Coluna reta (A), e flexão à frente (B)." }
+        ],
+        finishingData: [
+          { count: "Vinyasa", asana: "Urdhva Dhanurasana", r: "inhale", desc: "Ponte completa. Suba 3 vezes por 5 respirações cada." },
+          { count: "Vinyasa", asana: "Paschimottanasana", r: "exhale", desc: "Compensação. 10 respirações lentas." },
+          { count: "Vinyasa", asana: "Salamba Sarvangasana", r: "inhale", desc: "Invertida nos ombros. 15 respirações." },
+          { count: "Vinyasa", asana: "Sirsasana", r: "inhale", desc: "Invertida na cabeça. 15 a 25 respirações. Seguido de Balasana." },
+          { count: "Final", asana: "Padmasana & Utpluthih", r: "inhale", desc: "Lótus (10 resp.) e elevação do corpo com as mãos (10 resp.)." },
+          { count: "Relaxamento", asana: "Savasana", r: "relax", desc: "Descanso profundo. Mínimo 10 minutos." }
+        ],
+        adaptations: {
+          title: "Neurodiversidade e Respeito ao Corpo",
+          desc: "O Yoga deve se adaptar ao praticante, e não o contrário. Forçar uma postura em detrimento da função biomecânica causa lesões e desorganização sensorial.",
+          cardTitle: "Foco: Utthita Hasta Padangusthasana",
+          challengeTitle: "O Desafio Comum",
+          challengeDesc: "Nesta postura, tentar 'esticar a perna' faz o aluno curvar a coluna, fechar o peito e tencionar a lombar, gerando desconforto mecânico e frustração.",
+          kneeTitle: "Adaptação 1: Flexão de Joelho",
+          kneeList: [
+            "Mantenha a perna de base firme e reta.",
+            "Flexione o joelho da perna que sobe.",
+            "Abrace o joelho mantendo a coluna e o peito abertos.",
+            "Foco: Estabilidade (Sthira) e conforto (Sukha)."
+          ],
+          strapTitle: "Adaptação 2: Uso do Cinto",
+          strapList: [
+            "Passe o cinto na bola do pé.",
+            "Estenda a perna suavemente, deixando o cinto fazer a ponte.",
+            "Preserva a integridade da coluna sem exigir alongamento extremo."
+          ]
+        },
+        mantras: {
+          openingTitle: "Mantra de Abertura (Foco Mental)",
+          openingSanskrit: "Vande Gurunam Charanaravinde\nSandarshita Svatma Sukhava Bodhe\nNih Sreyase Jangalikayamane\nSamsara Halahala Mohashantyai\n\nAbahu Purushakaram\nShankhacakrsi Dharinam\nSahasra Shirasam Shvetam\nPranamami Patanjalim\nOm",
+          openingTranslation: "Saúdo os pés de lótus do Mestre supremo,\nQue ensina o bom conhecimento, mostrando o caminho;\nEle é o curandeiro da selva, capaz de dissipar a ilusão\nDo veneno de uma existência condicionada.\n\nDiante de Patanjali, uma encarnação de Adisesa,\nCom mil faces radiantes, empunhando a espada, a roda e a concha,\nEu me prostro.\nOm",
+          closingTitle: "Mantra de Encerramento (Mangala Mantra)",
+          closingSanskrit: "Swasthi Praja Bhyaha Pari Pala Yantam\nNya Yena Margena Mahi Mahishaha\nGo Brahmanebhyaha Shubamastu Nityam\nLokah Samastah Sukhino Bhavantu\nOm Shanti Shanti Shantihi",
+          closingTranslation: "Que a prosperidade seja glorificada,\nQue os governantes governem o mundo com justiça,\nQue a divindade e a erudição sejam protegidas,\nQue todos os seres em todos os mundos sejam felizes e livres.\nOm Paz, Paz, Paz."
+        }
+      },
+      en: {
+        appTitle: "Ashtanga Guide",
+        appSubtitle: "Structured Study Material",
+        removeAdsBtn: "Remove Ads",
+        premiumTag: "Premium",
+        tabs: { seq: "Sequence", adapt: "Adaptations", mantras: "Mantras" },
+        badges: { inhale: "INHALE", exhale: "EXHALE", transition: "TRANSITION", relax: "RELAX" },
+        ads: { label: "Sponsored", text: "Get 20% off Yoga gear at our partner store today!" },
+        modal: { 
+          title: "Unlock Premium Experience",
+          desc: "Study without distractions. Remove all ads and support the development of accessible tools for teachers.",
+          price: "$ 8.00",
+          payment: "One-time payment. Lifetime access.",
+          buyBtn: "Upgrade to Premium",
+          close: "Not right now"
+        },
+        seqDesc: "The Primary Series (Yoga Chikitsa) follows a strict logic. Open one block at a time to maintain focus without visual overload.",
+        blocks: {
+          suryaA: "1. Surya Namaskar A",
+          suryaB: "2. Surya Namaskar B",
+          standing: "3. Fundamental Asanas (Standing)",
+          seated: "4. Seated Asanas",
+          finishing: "5. Finishing Sequence"
+        },
+        suryaAData: [
+          { count: "Ekam (1)", asana: "Urdhva Hastasana", r: "inhale", desc: "Raise arms above head, gaze at thumbs." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Fold forward. Adaptation: slightly bend knees." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Lift head and lengthen the spine." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Jump or step back, lower into low plank." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Upward facing dog. Open the chest." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Downward facing dog. Stay for 5 breaths." },
+          { count: "Sapta (7)", asana: "Uttanasana B", r: "inhale", desc: "Jump forward, head up, spine long." },
+          { count: "Ashtau (8)", asana: "Uttanasana A", r: "exhale", desc: "Release head toward knees." },
+          { count: "Nava (9)", asana: "Urdhva Hastasana", r: "inhale", desc: "Rise up with flat back, lift arms." },
+          { count: "Samasthiti", asana: "Return", r: "exhale", desc: "Exhale, return to neutral standing posture." }
+        ],
+        suryaBData: [
+          { count: "Ekam (1)", asana: "Utkatasana", r: "inhale", desc: "Bend knees, raise arms." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Fold forward, hands to floor." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Lift head, lengthen spine." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Jump back, low plank." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Upward facing dog." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Downward facing dog." },
+          { count: "Sapta (7)", asana: "Virabhadrasana A (R)", r: "inhale", desc: "Pivot left foot. Right foot forward, raise arms." },
+          { count: "Ashtau (8)", asana: "Chaturanga", r: "exhale", desc: "Hands down, right leg back, lower." },
+          { count: "Nava (9)", asana: "Urdhva Mukha", r: "inhale", desc: "Upward facing dog." },
+          { count: "Dasha (10)", asana: "Adho Mukha", r: "exhale", desc: "Downward facing dog." },
+          { count: "Ekadasha (11)", asana: "Virabhadrasana A (L)", r: "inhale", desc: "Pivot right foot. Left foot forward, raise arms." },
+          { count: "Dvadasa (12)", asana: "Chaturanga", r: "exhale", desc: "Hands down, left leg back, lower." },
+          { count: "Trayodasha (13)", asana: "Urdhva Mukha", r: "inhale", desc: "Upward facing dog." },
+          { count: "Chaturdasha (14)", asana: "Adho Mukha", r: "exhale", desc: "Downward dog. 5 breaths." },
+          { count: "Panchadasha (15)", asana: "Uttanasana B", r: "inhale", desc: "Jump forward, head up." },
+          { count: "Shodasha (16)", asana: "Uttanasana A", r: "exhale", desc: "Head to knees." },
+          { count: "Saptadasha (17)", asana: "Utkatasana", r: "inhale", desc: "Bend knees, raise arms." },
+          { count: "Samasthiti", asana: "Return", r: "exhale", desc: "Straighten legs, arms by sides." }
+        ],
+        standingData: [
+          { count: "Ekam/Dve", asana: "Padangusthasana", r: "exhale", desc: "(In) Jump feet apart. (Ex) Grab big toes. 5 breaths." },
+          { count: "Trini/Chatvari", asana: "Padahastasana", r: "exhale", desc: "(In) Head up. (Ex) Step on hands. 5 breaths." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "(In) Come up. (Ex) Jump feet together." },
+          { count: "Ekam/Dve", asana: "Utthita Trikonasana", r: "exhale", desc: "Triangle pose. Right & Left." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "(In) Come up. (Ex) Return to front." },
+          { count: "Ekam/Dve", asana: "Utthita Parsvakonasana", r: "exhale", desc: "Extended side angle. Right & Left." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "(In) Come up. (Ex) Return to front." },
+          { count: "Ekam/Dve", asana: "Prasarita Padottanasana", r: "exhale", desc: "Wide legged fold. A, B, C, D." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "After all variations, return to front." },
+          { count: "Ekam/Dve", asana: "Parsvottanasana", r: "exhale", desc: "Intense side stretch. Right & Left." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "(In) Come up. (Ex) Return to front." },
+          { count: "Ekam/Dve", asana: "Utthita Hasta Padangusthasana", r: "transition", desc: "Adaptation: Bend knee and hug it. Keep spine straight!" },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "Release leg down with control." },
+          { count: "Ekam/Dve", asana: "Ardha Baddha Padmottanasana", r: "transition", desc: "Half bound lotus forward fold." },
+          { count: "Samasthiti", asana: "Return", r: "transition", desc: "After both sides, return to Samasthiti." },
+          { count: "Vinyasa", asana: "Utkatasana", r: "inhale", desc: "Chair pose. 5 breaths. Followed by Vinyasa." },
+          { count: "Sapta (7)", asana: "Virabhadrasana A & B", r: "inhale", desc: "Warrior I and II. No Vinyasa between sides." }
+        ],
+        seatedData: [
+          { count: "Vinyasa", asana: "Dandasana", r: "exhale", desc: "Staff pose. 5 breaths." },
+          { count: "Vinyasa", asana: "Paschimottanasana", r: "exhale", desc: "Seated forward fold. A/B/C." },
+          { count: "Vinyasa", asana: "Purvottanasana", r: "inhale", desc: "Upward plank." },
+          { count: "Vinyasa", asana: "Marichyasana", r: "exhale", desc: "Seated twists A/B/C/D." },
+          { count: "Vinyasa", asana: "Navasana", r: "inhale", desc: "Boat pose. 5 times." },
+          { count: "Vinyasa", asana: "Baddha Konasana", r: "exhale", desc: "Bound angle. Spine straight (A), fold (B)." }
+        ],
+        finishingData: [
+          { count: "Vinyasa", asana: "Urdhva Dhanurasana", r: "inhale", desc: "Upward bow (Wheel). 3 times." },
+          { count: "Vinyasa", asana: "Paschimottanasana", r: "exhale", desc: "Counter pose. 10 breaths." },
+          { count: "Vinyasa", asana: "Salamba Sarvangasana", r: "inhale", desc: "Shoulder stand. 15 breaths." },
+          { count: "Vinyasa", asana: "Sirsasana", r: "inhale", desc: "Headstand. 15-25 breaths." },
+          { count: "Relaxation", asana: "Savasana", r: "relax", desc: "Deep rest. 10 minutes minimum." }
+        ],
+        adaptations: {
+          title: "Neurodiversity and Body Respect",
+          desc: "Yoga must adapt to the practitioner. Forcing a posture at the expense of biomechanical function causes injury and sensory disorganization.",
+          cardTitle: "Focus: Utthita Hasta Padangusthasana",
+          challengeTitle: "Common Challenge",
+          challengeDesc: "Trying to 'straighten the leg' often causes the student to round the spine, compress the chest, and tense the lower back.",
+          kneeTitle: "Adaptation 1: Bent Knee",
+          kneeList: [
+            "Keep the standing leg firm and straight.",
+            "Bend the knee of the lifted leg.",
+            "Hug the knee while keeping the spine and chest open.",
+            "Focus: Stability (Sthira) and ease (Sukha)."
+          ],
+          strapTitle: "Adaptation 2: Yoga Strap",
+          strapList: [
+            "Place strap on the ball of the foot.",
+            "Extend leg gently, letting the strap bridge the gap.",
+            "Preserves spinal integrity without forcing extreme hamstring stretch."
+          ]
+        },
+        mantras: {
+          openingTitle: "Opening Mantra (Mental Focus)",
+          openingSanskrit: "Vande Gurunam Charanaravinde\nSandarshita Svatma Sukhava Bodhe\nNih Sreyase Jangalikayamane\nSamsara Halahala Mohashantyai\n\nAbahu Purushakaram\nShankhacakrsi Dharinam\nSahasra Shirasam Shvetam\nPranamami Patanjalim\nOm",
+          openingTranslation: "I bow to the lotus feet of the Supreme Guru\nWhich awaken insight into the happiness of pure Being,\nWhich are the refuge, the jungle physician\nWhich eliminate the delusion caused by the poisonous herb of Samsara.\n\nI prostrate before the sage Patanjali\nWho has thousands of radiant, white heads and who has,\nAs far as his arms, assumed the form of a man\nHolding a conch shell, a wheel and a sword.\nOm",
+          closingTitle: "Closing Mantra (Mangala Mantra)",
+          closingSanskrit: "Swasthi Praja Bhyaha Pari Pala Yantam\nNya Yena Margena Mahi Mahishaha\nGo Brahmanebhyaha Shubamastu Nityam\nLokah Samastah Sukhino Bhavantu\nOm Shanti Shanti Shantihi",
+          closingTranslation: "May the rulers of the earth protect the well-being of the people,\nWith justice by means of the right path.\nMay there always be good fortune for all living beings.\nMay all the inhabitants of the world be full of happiness.\nOm Peace, Peace, Peace."
+        }
+      },
+      es: {
+        appTitle: "Guía Ashtanga",
+        appSubtitle: "Material de Estudio Estructurado",
+        removeAdsBtn: "Quitar Anuncios",
+        premiumTag: "Premium",
+        tabs: { seq: "Secuencia", adapt: "Adaptaciones", mantras: "Mantras" },
+        badges: { inhale: "INHALA", exhale: "EXHALA", transition: "TRANSICIÓN", relax: "RELAJA" },
+        ads: { label: "Patrocinado", text: "¡Compra equipo de Yoga con 20% de descuento en nuestra tienda!" },
+        modal: { 
+          title: "Desbloquea la Experiencia Premium",
+          desc: "Estudia sin distracciones. Elimina todos los anuncios y apoya el desarrollo de herramientas accesibles.",
+          price: "R$ 40,00",
+          payment: "Pago único. Acceso de por vida.",
+          buyBtn: "Comprar Premium Ahora",
+          close: "Ahora no"
+        },
+        seqDesc: "La Primera Serie (Yoga Chikitsa) sigue una lógica estricta. Abre un bloque a la vez para mantener el enfoque sin sobrecarga visual.",
+        blocks: {
+          suryaA: "1. Surya Namaskar A",
+          suryaB: "2. Surya Namaskar B",
+          standing: "3. Asanas Fundamentales (De pie)",
+          seated: "4. Asanas Sentados",
+          finishing: "5. Secuencia Final"
+        },
+        suryaAData: [
+          { count: "Ekam (1)", asana: "Urdhva Hastasana", r: "inhale", desc: "Levanta brazos, mira pulgares." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Dóblate hacia adelante. Adaptación: dobla rodillas." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Levanta la cabeza y alarga la columna." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Salta o camina atrás, baja a plancha baja." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Perro mirando hacia arriba. Abre pecho." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Perro mirando hacia abajo. 5 respiraciones." },
+          { count: "Sapta (7)", asana: "Uttanasana B", r: "inhale", desc: "Camina adelante, cabeza arriba." },
+          { count: "Ashtau (8)", asana: "Uttanasana A", r: "exhale", desc: "Suelta la cabeza hacia las rodillas." },
+          { count: "Nava (9)", asana: "Urdhva Hastasana", r: "inhale", desc: "Sube el torso, levanta los brazos." },
+          { count: "Samasthiti", asana: "Retorno", r: "exhale", desc: "Exhalando, regresa a postura neutral." }
+        ],
+        suryaBData: [
+          { count: "Ekam (1)", asana: "Utkatasana", r: "inhale", desc: "Dobla rodillas, eleva brazos." },
+          { count: "Dve (2)", asana: "Uttanasana A", r: "exhale", desc: "Manos al suelo, estira piernas." },
+          { count: "Trini (3)", asana: "Uttanasana B", r: "inhale", desc: "Levanta cabeza, alarga columna." },
+          { count: "Chatvari (4)", asana: "Chaturanga", r: "exhale", desc: "Salta atrás, plancha baja." },
+          { count: "Pancha (5)", asana: "Urdhva Mukha", r: "inhale", desc: "Perro boca arriba." },
+          { count: "Shat (6)", asana: "Adho Mukha", r: "exhale", desc: "Perro boca abajo." },
+          { count: "Sapta (7)", asana: "Virabhadrasana A (Der)", r: "inhale", desc: "Gira pie izquierdo. Pie derecho adelante, eleva brazos." },
+          { count: "Ashtau (8)", asana: "Chaturanga", r: "exhale", desc: "Baja a plancha." },
+          { count: "Nava (9)", asana: "Urdhva Mukha", r: "inhale", desc: "Perro boca arriba." },
+          { count: "Dasha (10)", asana: "Adho Mukha", r: "exhale", desc: "Perro boca abajo." },
+          { count: "Ekadasha (11)", asana: "Virabhadrasana A (Izq)", r: "inhale", desc: "Gira pie derecho. Pie izquierdo adelante, eleva brazos." },
+          { count: "Dvadasa (12)", asana: "Chaturanga", r: "exhale", desc: "Baja a plancha." },
+          { count: "Trayodasha (13)", asana: "Urdhva Mukha", r: "inhale", desc: "Perro boca arriba." },
+          { count: "Chaturdasha (14)", asana: "Adho Mukha", r: "exhale", desc: "Perro boca abajo. 5 respiraciones." },
+          { count: "Panchadasha (15)", asana: "Uttanasana B", r: "inhale", desc: "Salta adelante, cabeza arriba." },
+          { count: "Shodasha (16)", asana: "Uttanasana A", r: "exhale", desc: "Cabeza a rodillas." },
+          { count: "Saptadasha (17)", asana: "Utkatasana", r: "inhale", desc: "Dobla rodillas, eleva brazos." },
+          { count: "Samasthiti", asana: "Retorno", r: "exhale", desc: "Estira piernas, brazos a los lados." }
+        ],
+        standingData: [
+          { count: "Ekam/Dve", asana: "Padangusthasana", r: "exhale", desc: "(In) Salta y separa pies. (Ex) Agarra dedos. 5 resp." },
+          { count: "Trini/Chatvari", asana: "Padahastasana", r: "exhale", desc: "(In) Cabeza arriba. (Ex) Pisa las manos. 5 resp." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Sube. (Ex) Salta pies juntos." },
+          { count: "Ekam/Dve", asana: "Utthita Trikonasana", r: "exhale", desc: "Triángulo. Der e Izq." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Sube. (Ex) Retorna al frente." },
+          { count: "Ekam/Dve", asana: "Utthita Parsvakonasana", r: "exhale", desc: "Ángulo lateral. Der e Izq." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Sube. (Ex) Retorna al frente." },
+          { count: "Ekam/Dve", asana: "Prasarita Padottanasana", r: "exhale", desc: "Piernas separadas A, B, C, D." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "Después de las 4 variaciones, retorna al frente." },
+          { count: "Ekam/Dve", asana: "Parsvottanasana", r: "exhale", desc: "Estiramiento lateral intenso." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "(In) Sube. (Ex) Retorna al frente." },
+          { count: "Ekam/Dve", asana: "Utthita Hasta Padangusthasana", r: "transition", desc: "Adaptación: Dobla rodilla y abrázala. ¡Columna recta!" },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "Baja la pierna con control." },
+          { count: "Ekam/Dve", asana: "Ardha Baddha Padmottanasana", r: "transition", desc: "Medio loto de pie." },
+          { count: "Samasthiti", asana: "Retorno", r: "transition", desc: "Después de ambos lados, retorna." },
+          { count: "Vinyasa", asana: "Utkatasana", r: "inhale", desc: "Silla. 5 respiraciones. Seguido de Vinyasa." },
+          { count: "Sapta (7)", asana: "Virabhadrasana", r: "inhale", desc: "Guerrero I y II. Sin Vinyasa entre lados." }
+        ],
+        seatedData: [
+          { count: "Vinyasa", asana: "Dandasana", r: "exhale", desc: "Postura del bastón. 5 respiraciones." },
+          { count: "Vinyasa", asana: "Paschimottanasana", r: "exhale", desc: "Flexión hacia adelante. A/B/C." },
+          { count: "Vinyasa", asana: "Purvottanasana", r: "inhale", desc: "Plancha hacia arriba." },
+          { count: "Vinyasa", asana: "Marichyasana", r: "exhale", desc: "Torsiones sentadas A/B/C/D." },
+          { count: "Vinyasa", asana: "Navasana", r: "inhale", desc: "Bote. 5 veces." },
+          { count: "Vinyasa", asana: "Baddha Konasana", r: "exhale", desc: "Ángulo atado. Columna recta (A), flexión (B)." }
+        ],
+        finishingData: [
+          { count: "Vinyasa", asana: "Urdhva Dhanurasana", r: "inhale", desc: "Arco hacia arriba. 3 veces." },
+          { count: "Vinyasa", asana: "Paschimottanasana", r: "exhale", desc: "Contrapostura. 10 respiraciones." },
+          { count: "Vinyasa", asana: "Salamba Sarvangasana", r: "inhale", desc: "Parada de hombros. 15 respiraciones." },
+          { count: "Vinyasa", asana: "Sirsasana", r: "inhale", desc: "Parada de cabeza. 15-25 respiraciones." },
+          { count: "Relajación", asana: "Savasana", r: "relax", desc: "Descanso profundo. 10 minutos mínimo." }
+        ],
+        adaptations: {
+          title: "Neurodiversidad y Respeto al Cuerpo",
+          desc: "El Yoga debe adaptarse al practicante. Forzar una postura a expensas de la función biomecánica causa lesiones y desorganización sensorial.",
+          cardTitle: "Foco: Utthita Hasta Padangusthasana",
+          challengeTitle: "Desafío Común",
+          challengeDesc: "Al intentar 'estirar la pierna', el alumno curva la columna, cierra el pecho y tensa la zona lumbar.",
+          kneeTitle: "Adaptación 1: Flexión de Rodilla",
+          kneeList: [
+            "Mantén la pierna base firme.",
+            "Flexiona la rodilla de la pierna que sube.",
+            "Abraza la rodilla manteniendo la columna recta.",
+            "Enfoque: Estabilidad y comodidad."
+          ],
+          strapTitle: "Adaptación 2: Uso de Cinturón",
+          strapList: [
+            "Pasa el cinturón por la bola del pie.",
+            "Extiende suavemente dejando que el cinturón haga el puente.",
+            "Preserva la integridad espinal."
+          ]
+        },
+        mantras: {
+          openingTitle: "Mantra de Apertura",
+          openingSanskrit: "Vande Gurunam Charanaravinde\nSandarshita Svatma Sukhava Bodhe\nNih Sreyase Jangalikayamane\nSamsara Halahala Mohashantyai\n\nAbahu Purushakaram\nShankhacakrsi Dharinam\nSahasra Shirasam Shvetam\nPranamami Patanjalim\nOm",
+          openingTranslation: "Me postro a los pies de loto del Maestro,\nQue revela el conocimiento del despertar del alma;\nComo sanador de la selva, disipa la ilusión\nDel veneno de la existencia condicionada.\n\nAnte Patanjali, con mil cabezas radiantes,\nSosteniendo la caracola, el disco y la espada,\nMe postro.\nOm",
+          closingTitle: "Mantra de Cierre",
+          closingSanskrit: "Swasthi Praja Bhyaha Pari Pala Yantam\nNya Yena Margena Mahi Mahishaha\nGo Brahmanebhyaha Shubamastu Nityam\nLokah Samastah Sukhino Bhavantu\nOm Shanti Shanti Shantihi",
+          closingTranslation: "Que la prosperidad sea glorificada,\nQue los gobernantes dirijan con justicia,\nQue lo divino sea protegido,\nQue todos los seres en todos los mundos sean felices.\nOm Paz, Paz, Paz."
+        }
+      }
+    };
+
+    // --- COMPONENTES DE UI ---
+
+    const Badge = ({ type, text }) => {
+      let styles = "bg-stone-200 text-stone-600";
+      if (type === 'inhale') styles = "bg-sky-100 text-sky-800 border-sky-200";
+      if (type === 'exhale') styles = "bg-amber-100 text-amber-800 border-amber-200";
+      if (type === 'relax') styles = "bg-indigo-100 text-indigo-800 border-indigo-200";
+      
+      return (
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${styles}`}>
+          {text}
+        </span>
+      );
+    };
+
+    const Accordion = ({ title, children, defaultOpen = false }) => {
+      const [isOpen, setIsOpen] = useState(defaultOpen);
+      return (
+        <div className="mb-4 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden transition-all">
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full px-5 py-4 sm:px-6 sm:py-5 flex justify-between items-center bg-white hover:bg-stone-50 transition-colors focus:outline-none"
+          >
+            <h2 className="text-lg font-semibold text-stone-700 text-left">{title}</h2>
+            <i className={`ph ph-caret-${isOpen ? 'up' : 'down'} text-stone-400 text-xl`}></i>
+          </button>
+          {isOpen && (
+            <div className="p-4 sm:p-6 border-t border-stone-100 bg-stone-50/50 fade-in">
+              {children}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const SequenceList = ({ data, t }) => (
+      <div className="space-y-3">
+        {data.map((item, idx) => (
+          <div key={idx} className="flex flex-col md:flex-row md:items-center p-4 bg-white rounded-xl border border-stone-100 hover:border-teal-100 hover:shadow-sm transition-all">
+            <div className="md:w-32 font-bold text-teal-700 text-sm mb-2 md:mb-0 flex items-center">
+              <i className="ph-fill ph-hash text-teal-400 mr-1"></i> {item.count}
+            </div>
+            <div className="md:w-1/3 font-bold text-stone-800 text-lg mb-2 md:mb-0">
+              {item.asana}
+            </div>
+            <div className="md:w-32 mb-2 md:mb-0 shrink-0">
+              <Badge type={item.r} text={t.badges[item.r]} />
+            </div>
+            <div className="flex-1 text-stone-600 text-sm md:text-base leading-relaxed">
+              {item.desc}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+
+    const PremiumModal = ({ isOpen, onClose, onBuy, t }) => {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay bg-stone-900/40">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative fade-in">
+            <button onClick={onClose} className="absolute top-4 right-4 text-stone-400 hover:text-stone-600">
+              <i className="ph ph-x text-2xl"></i>
+            </button>
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-6">
+              <i className="ph-fill ph-crown text-3xl text-teal-600"></i>
+            </div>
+            <h3 className="text-2xl font-bold text-stone-800 mb-2">{t.modal.title}</h3>
+            <p className="text-stone-600 mb-6 leading-relaxed text-sm">{t.modal.desc}</p>
+            
+            <div className="bg-stone-50 rounded-xl p-4 mb-6 border border-stone-100 text-center">
+              <div className="text-3xl font-extrabold text-teal-700 mb-1">{t.modal.price}</div>
+              <div className="text-xs font-medium text-stone-500 uppercase tracking-wider">{t.modal.payment}</div>
+            </div>
+
+            <button 
+              onClick={onBuy}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl transition-colors shadow-sm mb-3"
+            >
+              {t.modal.buyBtn}
+            </button>
+            <button 
+              onClick={onClose}
+              className="w-full text-stone-500 hover:text-stone-700 font-medium py-2 transition-colors text-sm"
+            >
+              {t.modal.close}
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const AdBanner = ({ t }) => (
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-stone-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40 p-3 sm:p-4 fade-in">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <span className="bg-stone-100 text-stone-500 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded border border-stone-200">
+              {t.ads.label}
+            </span>
+            <p className="text-sm font-medium text-stone-700 line-clamp-1 flex-1">
+              {t.ads.text}
+            </p>
+          </div>
+          <button className="w-full sm:w-auto px-6 py-2 bg-stone-800 text-white text-sm font-semibold rounded-lg hover:bg-stone-700 transition">
+            <i className="ph ph-arrow-square-out mr-2"></i>Link
+          </button>
+        </div>
+      </div>
+    );
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [lang, setLang] = useState('pt');
+      const [isPremium, setIsPremium] = useState(false);
+      const [modalOpen, setModalOpen] = useState(false);
+      const [activeTab, setActiveTab] = useState('seq');
+
+      const t = translations[lang];
+
+      return (
+        <div className={`min-h-screen font-sans flex flex-col ${!isPremium ? 'pb-24' : 'pb-8'}`}>
+          
+          {/* Header */}
+          <header className="bg-white border-b border-stone-200 sticky top-0 z-30">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
+              
+              {/* Top Bar (Language & Premium) */}
+              <div className="flex justify-between items-center py-4">
+                <div className="flex bg-stone-100 p-1 rounded-lg">
+                  {['pt', 'en', 'es'].map(l => (
+                    <button 
+                      key={l} onClick={() => setLang(l)}
+                      className={`px-3 py-1 text-sm font-bold uppercase rounded-md transition-all ${lang === l ? 'bg-white text-teal-700 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+
+                {!isPremium ? (
+                  <button 
+                    onClick={() => setModalOpen(true)}
+                    className="flex items-center gap-2 text-sm font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-lg transition-colors border border-amber-200/50"
+                  >
+                    <i className="ph-fill ph-crown text-lg"></i>
+                    <span className="hidden sm:inline">{t.removeAdsBtn}</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm font-bold text-teal-600 bg-teal-50 px-4 py-2 rounded-lg border border-teal-200/50">
+                    <i className="ph-fill ph-check-circle text-lg"></i> {t.premiumTag}
+                  </div>
+                )}
+              </div>
+
+              {/* Title Area */}
+              <div className="pt-2 pb-6">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-800 tracking-tight flex items-center gap-3">
+                  {t.appTitle} <span className="text-teal-600">Yoga</span>
+                </h1>
+                <p className="text-stone-500 mt-1 font-medium">{t.appSubtitle}</p>
+              </div>
+              
+              {/* Tabs */}
+              <nav className="flex space-x-1 overflow-x-auto no-scrollbar">
+                {Object.entries(t.tabs).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`px-5 py-3 text-base font-semibold whitespace-nowrap border-b-2 transition-all ${
+                      activeTab === key 
+                        ? 'text-teal-700 border-teal-600 bg-teal-50/50 rounded-t-xl' 
+                        : 'text-stone-400 border-transparent hover:text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-8">
+            
+            {/* TAB: SEQUENCE */}
+            {activeTab === 'seq' && (
+              <div className="fade-in space-y-2">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 mb-6 flex items-start gap-4">
+                  <div className="bg-teal-50 p-2 rounded-lg text-teal-600 hidden sm:block"><i className="ph ph-info text-2xl"></i></div>
+                  <p className="text-stone-600 font-medium leading-relaxed pt-1">{t.seqDesc}</p>
+                </div>
+
+                <Accordion title={t.blocks.suryaA} defaultOpen={true}>
+                  <SequenceList data={t.suryaAData} t={t} />
+                </Accordion>
+                <Accordion title={t.blocks.suryaB}>
+                  <SequenceList data={t.suryaBData} t={t} />
+                </Accordion>
+                <Accordion title={t.blocks.standing}>
+                  <SequenceList data={t.standingData} t={t} />
+                </Accordion>
+                <Accordion title={t.blocks.seated}>
+                  <SequenceList data={t.seatedData} t={t} />
+                </Accordion>
+                <Accordion title={t.blocks.finishing}>
+                  <SequenceList data={t.finishingData} t={t} />
+                </Accordion>
+              </div>
+            )}
+
+            {/* TAB: ADAPTATIONS */}
+            {activeTab === 'adapt' && (
+              <div className="fade-in space-y-6">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-stone-200">
+                  <h2 className="text-2xl font-bold text-stone-800 mb-4">{t.adaptations.title}</h2>
+                  <p className="text-stone-600 leading-relaxed text-lg">{t.adaptations.desc}</p>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sm:p-8">
+                  <h3 className="text-xl font-bold text-teal-800 mb-6 pb-4 border-b border-stone-100">
+                    {t.adaptations.cardTitle}
+                  </h3>
+                  
+                  <div className="bg-stone-50 rounded-xl p-5 mb-8 border border-stone-100">
+                    <h4 className="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                      <i className="ph-fill ph-warning-circle text-amber-500 text-xl"></i> 
+                      {t.adaptations.challengeTitle}
+                    </h4>
+                    <p className="text-stone-600">{t.adaptations.challengeDesc}</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-teal-50/50 rounded-xl p-6 border border-teal-100">
+                      <h4 className="font-bold text-teal-800 mb-4 flex items-center gap-2">
+                        <i className="ph ph-person-simple-walk text-teal-600 text-xl"></i>
+                        {t.adaptations.kneeTitle}
+                      </h4>
+                      <ul className="space-y-3">
+                        {t.adaptations.kneeList.map((item, i) => (
+                          <li key={i} className="flex items-start text-stone-700 text-sm">
+                            <i className="ph-fill ph-check-circle text-teal-500 mr-2 mt-0.5"></i> {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="bg-sky-50/50 rounded-xl p-6 border border-sky-100">
+                      <h4 className="font-bold text-sky-800 mb-4 flex items-center gap-2">
+                        <i className="ph ph-anchor-simple text-sky-600 text-xl"></i>
+                        {t.adaptations.strapTitle}
+                      </h4>
+                      <ul className="space-y-3">
+                        {t.adaptations.strapList.map((item, i) => (
+                          <li key={i} className="flex items-start text-stone-700 text-sm">
+                            <i className="ph-fill ph-check-circle text-sky-500 mr-2 mt-0.5"></i> {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: MANTRAS */}
+            {activeTab === 'mantras' && (
+              <div className="fade-in space-y-6">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-stone-200">
+                  <h3 className="text-xl font-bold text-teal-800 mb-6 flex items-center gap-2">
+                    <i className="ph-fill ph-hands-praying text-teal-600 text-2xl"></i>
+                    {t.mantras.openingTitle}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Sânscrito</h4>
+                      <pre className="font-sans text-stone-700 italic leading-relaxed whitespace-pre-wrap">{t.mantras.openingSanskrit}</pre>
+                    </div>
+                    <div className="pt-6 md:pt-0 md:border-l md:border-stone-100 md:pl-8">
+                      <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Tradução</h4>
+                      <pre className="font-sans text-stone-600 leading-relaxed whitespace-pre-wrap">{t.mantras.openingTranslation}</pre>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-stone-200">
+                  <h3 className="text-xl font-bold text-stone-800 mb-6 flex items-center gap-2">
+                    <i className="ph ph-om text-stone-600 text-2xl"></i>
+                    {t.mantras.closingTitle}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Sânscrito</h4>
+                      <pre className="font-sans text-stone-700 italic leading-relaxed whitespace-pre-wrap">{t.mantras.closingSanskrit}</pre>
+                    </div>
+                    <div className="pt-6 md:pt-0 md:border-l md:border-stone-100 md:pl-8">
+                      <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Tradução</h4>
+                      <pre className="font-sans text-stone-600 leading-relaxed whitespace-pre-wrap">{t.mantras.closingTranslation}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {/* Ad Banner Fixo e Modal de Pagamento */}
+          {!isPremium && <AdBanner t={t} />}
+          <PremiumModal 
+            isOpen={modalOpen} 
+            onClose={() => setModalOpen(false)} 
+            onBuy={() => {
+              setIsPremium(true);
+              setModalOpen(false);
+            }}
+            t={t}
+          />
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
